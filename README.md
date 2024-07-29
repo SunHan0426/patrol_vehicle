@@ -55,8 +55,17 @@ This study demonstrate that the new method based on the patrol vehicle provides 
 
 | Comparison | Effect |
 | ---------- | -----------|
-| ![](/imgs/mIoU.jpg) | ![](/imgs/demo.jpg) |
+| ![](/imgs/Comparison.jpg) | ![](/imgs/demo.jpg) |
 
 </div>
 
 ## Reference
+We sincerely thank the following projects for their contributions.
+
+[pytorch_segmentation](https://github.com/ggyyzm/pytorch_segmentation)
+
+[pspnet-pytorch](https://github.com/bubbliiiing/pspnet-pytorch)
+
+[labelme](https://github.com/wkentaro/labelme)
+
+[mmsegmentation](https://github.com/open-mmlab/mmsegmentation)
