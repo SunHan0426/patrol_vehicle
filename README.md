@@ -11,6 +11,8 @@ This is complete code for orchard Patrol Vehicle control and detection. In this 
 
 </div>
 
+---
+
 ## Instructions
 ### Requirements
     pyzed==4.1
@@ -22,8 +24,9 @@ This is complete code for orchard Patrol Vehicle control and detection. In this 
     mmsegmentation==1.2.2
 ### How to use?
 Just run the following code to open the GUI page:
-
-    python /main_script.py
+```Python
+python /main_script.py
+```
 In this project, the interactive interface has been made. You can easily realize distance perception, image acquisition, image inference and other operations by using the GUI.
 <div align="center">
 
@@ -43,6 +46,8 @@ In this project, the interactive interface has been made. You can easily realize
     The images acquire by HD-camera are saved in "/HKCam_imgs"
     The results of disease segmentation are saved in "seg_img"
 
+---
+
 ## Contribution
 
 Firstly, a method combining binocular vision and an improved semantic segmentation model for detecting tree trunks to perceive tree distances was proposed, enabling high-definition cameras to capture clear leaf images. The model can swiftly and accurately segment tree trunks and measure tree distances. Through Z-Score optimization, ranging errors were minimized to just *1.39%*. 
@@ -58,6 +63,8 @@ This study demonstrate that the new method based on the patrol vehicle provides 
 | ![](/imgs/Comparison.jpg) | ![](/imgs/demo.jpg) |
 
 </div>
+
+---
 
 ## Reference
 We sincerely thank the following projects for their contributions.
