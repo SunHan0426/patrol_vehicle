@@ -16,7 +16,6 @@ sys.path.append("../MvImport")
 from CameraParams_header import *
 from MvCameraControl_class import *
 
-# 强制关闭线程
 def Async_raise(tid, exctype):
     tid = ctypes.c_long(tid)
     if not inspect.isclass(exctype):
@@ -29,12 +28,10 @@ def Async_raise(tid, exctype):
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
-# 停止线程
 def Stop_thread(thread):
     Async_raise(thread.ident, SystemExit)
 
 
-# 转为16进制字符串
 def To_hex_str(num):
     chaDic = {10: 'a', 11: 'b', 12: 'c', 13: 'd', 14: 'e', 15: 'f'}
     hexStr = ""
@@ -48,7 +45,6 @@ def To_hex_str(num):
     return hexStr
 
 
-# 是否是Mono图像
 def Is_mono_data(enGvspPixelType):
     if PixelType_Gvsp_Mono8 == enGvspPixelType or PixelType_Gvsp_Mono10 == enGvspPixelType \
             or PixelType_Gvsp_Mono10_Packed == enGvspPixelType or PixelType_Gvsp_Mono12 == enGvspPixelType \
@@ -58,7 +54,6 @@ def Is_mono_data(enGvspPixelType):
         return False
 
 
-# 是否是彩色图像
 def Is_color_data(enGvspPixelType):
     if PixelType_Gvsp_BayerGR8 == enGvspPixelType or PixelType_Gvsp_BayerRG8 == enGvspPixelType \
             or PixelType_Gvsp_BayerGB8 == enGvspPixelType or PixelType_Gvsp_BayerBG8 == enGvspPixelType \
@@ -76,7 +71,6 @@ def Is_color_data(enGvspPixelType):
         return False
 
 
-# Mono图像转为python数组
 def Mono_numpy(data, nWidth, nHeight):
     data_ = np.frombuffer(data, count=int(nWidth * nHeight), dtype=np.uint8, offset=0)
     data_mono_arr = data_.reshape(nHeight, nWidth)
@@ -85,7 +79,6 @@ def Mono_numpy(data, nWidth, nHeight):
     return numArray
 
 
-# 彩色图像转为python数组
 def Color_numpy(data, nWidth, nHeight):
     data_ = np.frombuffer(data, count=int(nWidth * nHeight * 3), dtype=np.uint8, offset=0)
     data_r = data_[0:nWidth * nHeight * 3:3]
@@ -103,7 +96,6 @@ def Color_numpy(data, nWidth, nHeight):
     return numArray
 
 
-# 相机操作类
 class CameraOperation:
 
     def __init__(self, obj_cam, st_device_list, n_connect_num=0, b_open_device=False, b_start_grabbing=False,
@@ -131,15 +123,14 @@ class CameraOperation:
         self.frame_rate = frame_rate
         self.exposure_time = exposure_time
         self.gain = gain
-        self.buf_lock = threading.Lock()  # 取图和存图的buffer锁
+        self.buf_lock = threading.Lock()
 
-    # 打开相机
     def Open_device(self):
         if not self.b_open_device:
             if self.n_connect_num < 0:
                 return MV_E_CALLORDER
 
-            # ch:选择设备并创建句柄 | en:Select device and create handle
+            # Select device and create handle
             nConnectionNum = int(self.n_connect_num)
             stDeviceList = cast(self.st_device_list.pDeviceInfo[int(nConnectionNum)],
                                 POINTER(MV_CC_DEVICE_INFO)).contents
@@ -156,7 +147,7 @@ class CameraOperation:
             self.b_open_device = True
             self.b_thread_closed = False
 
-            # ch:探测网络最佳包大小(只对GigE相机有效) | en:Detection network optimal package size(It only works for the GigE camera)
+            # Detection network optimal package size(It only works for the GigE camera)
             if stDeviceList.nTLayerType == MV_GIGE_DEVICE:
                 nPacketSize = self.obj_cam.MV_CC_GetOptimalPacketSize()
                 if int(nPacketSize) > 0:
@@ -171,13 +162,12 @@ class CameraOperation:
             if ret != 0:
                 print("get acquisition frame rate enable fail! ret[0x%x]" % ret)
 
-            # ch:设置触发模式为off | en:Set trigger mode as off
+            # Set trigger mode as off
             ret = self.obj_cam.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_OFF)
             if ret != 0:
                 print("set trigger mode fail! ret[0x%x]" % ret)
             return MV_OK
-
-    # 开始取图
+    # Start grabbing
     def Start_grabbing(self, winHandle):
         if not self.b_start_grabbing and self.b_open_device:
             self.b_exit = False
@@ -197,10 +187,9 @@ class CameraOperation:
 
         return MV_E_CALLORDER
 
-    # 停止取图
+    # Stop grabbing
     def Stop_grabbing(self):
         if self.b_start_grabbing and self.b_open_device:
-            # 退出线程
             if self.b_thread_closed:
                 Stop_thread(self.h_thread_handle)
                 self.b_thread_closed = False
@@ -214,10 +203,8 @@ class CameraOperation:
         else:
             return MV_E_CALLORDER
 
-    # 关闭相机
     def Close_device(self):
         if self.b_open_device:
-            # 退出线程
             if self.b_thread_closed:
                 Stop_thread(self.h_thread_handle)
                 self.b_thread_closed = False
@@ -225,7 +212,7 @@ class CameraOperation:
             if ret != 0:
                 return ret
 
-        # ch:销毁句柄 | Destroy handle
+        # Destroy handle
         self.obj_cam.MV_CC_DestroyHandle()
         self.b_open_device = False
         self.b_start_grabbing = False
@@ -234,7 +221,6 @@ class CameraOperation:
 
         return MV_OK
 
-    # 设置触发模式
     def Set_trigger_mode(self, is_trigger_mode):
         if not self.b_open_device:
             return MV_E_CALLORDER
@@ -253,12 +239,10 @@ class CameraOperation:
 
         return MV_OK
 
-    # 软触发一次
     def Trigger_once(self):
         if self.b_open_device:
             return self.obj_cam.MV_CC_SetCommandValue("TriggerSoftware")
 
-    # 获取参数
     def Get_parameter(self):
         if self.b_open_device:
             stFloatParam_FrameRate = MVCC_FLOATVALUE()
@@ -284,7 +268,6 @@ class CameraOperation:
 
             return MV_OK
 
-    # 设置参数
     def Set_parameter(self, frameRate, exposureTime, gain):
         if '' == frameRate or '' == exposureTime or '' == gain:
             print('show info', 'please type in the text box !')
@@ -311,9 +294,7 @@ class CameraOperation:
 
             return MV_OK
 
-    # 取图线程函数
     def Work_thread(self, winHandle):
-        # stOutFrame = MV_FRAME_OUT()
         stFrameInfo = MV_FRAME_OUT_INFO_EX()
         img_buff = None
         numArray = None
@@ -330,27 +311,21 @@ class CameraOperation:
 
             ret = self.obj_cam.MV_CC_GetOneFrameTimeout(self.buf_grab_image, self.buf_grab_image_size, stFrameInfo)
 
-            # ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
             if 0 == ret:
-                # 拷贝图像和图像信息
                 if self.buf_save_image is None:
                     self.buf_save_image = (c_ubyte * stFrameInfo.nFrameLen)()
                 self.st_frame_info = stFrameInfo
 
-                # 获取缓存锁
                 self.buf_lock.acquire()
                 cdll.msvcrt.memcpy(byref(self.buf_save_image), self.buf_grab_image, self.st_frame_info.nFrameLen)
                 self.buf_lock.release()
 
                 print("get one frame: Width[%d], Height[%d], nFrameNum[%d]"
                       % (self.st_frame_info.nWidth, self.st_frame_info.nHeight, self.st_frame_info.nFrameNum))
-                # 释放缓存
-                # self.obj_cam.MV_CC_FreeImageBuffer(stOutFrame)
             else:
                 print("no data, ret = " + To_hex_str(ret))
                 continue
 
-            # 使用Display接口显示图像
             stDisplayParam = MV_DISPLAY_FRAME_INFO()
             memset(byref(stDisplayParam), 0, sizeof(stDisplayParam))
             stDisplayParam.hWnd = int(winHandle)
@@ -361,7 +336,6 @@ class CameraOperation:
             stDisplayParam.nDataLen = self.st_frame_info.nFrameLen
             self.obj_cam.MV_CC_DisplayOneFrame(stDisplayParam)
 
-            # 是否退出
             if self.b_exit:
                 if img_buff is not None:
                     del img_buff
@@ -369,24 +343,22 @@ class CameraOperation:
                     del self.buf_save_image
                 break
 
-    # 存jpg图像
     def Save_jpg(self):
 
         if self.buf_save_image is None:
             return
 
-        # 获取缓存锁
         self.buf_lock.acquire()
 
         file_path = str(self.st_frame_info.nFrameNum) + ".jpg"
         c_file_path = file_path.encode('ascii')
         stSaveParam = MV_SAVE_IMAGE_TO_FILE_PARAM_EX()
-        stSaveParam.enPixelType = self.st_frame_info.enPixelType  # ch:相机对应的像素格式 | en:Camera pixel type
-        stSaveParam.nWidth = self.st_frame_info.nWidth  # ch:相机对应的宽 | en:Width
-        stSaveParam.nHeight = self.st_frame_info.nHeight  # ch:相机对应的高 | en:Height
+        stSaveParam.enPixelType = self.st_frame_info.enPixelType  # Camera pixel type
+        stSaveParam.nWidth = self.st_frame_info.nWidth  # Width
+        stSaveParam.nHeight = self.st_frame_info.nHeight  # Height
         stSaveParam.nDataLen = self.st_frame_info.nFrameLen
         stSaveParam.pData = cast(self.buf_save_image, POINTER(c_ubyte))
-        stSaveParam.enImageType = MV_Image_Jpeg  # ch:需要保存的图像类型 | en:Image format to save
+        stSaveParam.enImageType = MV_Image_Jpeg  # Image format to save
         stSaveParam.nQuality = 99
         stSaveParam.pcImagePath = ctypes.create_string_buffer(c_file_path)
         stSaveParam.iMethodValue = 2
@@ -395,25 +367,23 @@ class CameraOperation:
         self.buf_lock.release()
         return ret
 
-    # 存BMP图像
     def Save_Bmp(self):
 
         if 0 == self.buf_save_image:
             return
 
-        # 获取缓存锁
         self.buf_lock.acquire()
 
         file_path = str(self.st_frame_info.nFrameNum) + ".bmp"
         c_file_path = file_path.encode('ascii')
 
         stSaveParam = MV_SAVE_IMAGE_TO_FILE_PARAM_EX()
-        stSaveParam.enPixelType = self.st_frame_info.enPixelType  # ch:相机对应的像素格式 | en:Camera pixel type
-        stSaveParam.nWidth = self.st_frame_info.nWidth  # ch:相机对应的宽 | en:Width
-        stSaveParam.nHeight = self.st_frame_info.nHeight  # ch:相机对应的高 | en:Height
+        stSaveParam.enPixelType = self.st_frame_info.enPixelType
+        stSaveParam.nWidth = self.st_frame_info.nWidth
+        stSaveParam.nHeight = self.st_frame_info.nHeight
         stSaveParam.nDataLen = self.st_frame_info.nFrameLen
         stSaveParam.pData = cast(self.buf_save_image, POINTER(c_ubyte))
-        stSaveParam.enImageType = MV_Image_Bmp  # ch:需要保存的图像类型 | en:Image format to save
+        stSaveParam.enImageType = MV_Image_Bmp
         stSaveParam.nQuality = 8
         stSaveParam.pcImagePath = ctypes.create_string_buffer(c_file_path)
         stSaveParam.iMethodValue = 2
