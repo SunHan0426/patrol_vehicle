@@ -7,7 +7,7 @@ This is complete code for orchard Patrol Vehicle control and detection. In this 
 
 | Patrol Vehicle  |
 | ---------- |
-|   ![](/imgs/PatrolVehicle.jpg)   |
+|   ![](/imgs/Patrol_Vehicle.jpg)   |
 | Real working environment |
 
 </div>
